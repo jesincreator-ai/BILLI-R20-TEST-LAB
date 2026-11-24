@@ -5,7 +5,7 @@ Status legend: **Done** = repository implementation exists; **Partial** = starte
 ## Phase status
 - [x] Phase 0 — Repository and responsive frontend foundation (static demo)
 - [x] Phase 1A — FastAPI starter, health endpoint, deterministic Nanobot Lite intent router, consent-gated local memory module
-- [ ] Phase 1B — Frontend-to-backend chat connection, configuration and integration tests
+- [x] Phase 1B — Frontend-to-backend chat connection, configuration and integration tests
 - [ ] Phase 2 — SQLite knowledge schema, FTS5 search, JSONL import/export, evidence-backed RAG
 - [ ] Phase 3 — Model-provider adapter and local model configuration (no provider selected yet)
 - [ ] Phase 4 — Voice adapters and wake-word integration (browser demo only currently)
@@ -16,12 +16,14 @@ Status legend: **Done** = repository implementation exists; **Partial** = starte
 - [ ] Phase 9 — Multilingual coverage (English, Tamil, Sinhala), QA, accessibility, and release checks
 
 ## This increment
+Phase 1B adds a deployable root Vercel entrypoint and connects the static frontend to the FastAPI API when served from the same origin. The frontend now reports backend availability from `/health` and sends real chat requests to `/api/chat`; if the backend is unavailable it states that no AI response was generated.
+
 Backend starter lives in `backend/`:
 - `GET /health` exposes status and truthfully reports provider/database not configured.
 - `POST /api/chat` returns deterministic demo responses based on rule-routed intents.
 - Nanobot Lite router supports greeting/help/search/status and unknown fallback, with a small set of Tamil/Sinhala keywords.
 - MemoryStore requires explicit consent for both remember and recall; SQLite file path defaults to local `backend/data` and is gitignored.
-- Unit tests cover routing and memory consent. Tests have **not yet been executed in a runtime** during this increment.
+- Unit tests cover routing and memory consent. The repository now includes API integration tests for health and chat; runtime execution still depends on the connected CI or local Python environment.
 
 ## Run backend locally
 From the repository root:
