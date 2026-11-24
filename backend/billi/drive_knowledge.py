@@ -55,7 +55,7 @@ def chunk_text(text,size=1100,overlap=160):
 def embed(text):
     key=env("GEMINI_API_KEY")
     if not key: raise HTTPException(503,"GEMINI_API_KEY required for embedding knowledge")
-    r=httpx.post(f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={key}",json={"model":"models/text-embedding-004","content":{"parts":[{"text":text[:8000]}]}},timeout=40)
+    r=httpx.post(f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={key}",json={"model":"models/gemini-embedding-001","content":{"parts":[{"text":text[:8000]}]},"outputDimensionality":768},timeout=40)
     r.raise_for_status(); return r.json()["embedding"]["values"]
 def list_drive_files(creds):
     headers={"Authorization":f"Bearer {creds.token}"}
