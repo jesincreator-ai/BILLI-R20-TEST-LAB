@@ -21,12 +21,12 @@ def drive_status():
  except Exception: connected=False
  return {"connected":connected,"supabase_configured":bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY")),"oauth_configured":bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET")),"embedding_configured":bool(os.getenv("GEMINI_API_KEY")),"languages":["en","ta","si"],"privacy":"Drive read-only; private source sharing is not changed"}
 @app.get("/api/drive/oauth/start")
-def drive_oauth_start():
+def drive_oauth_start(response:Response):
  from .drive_knowledge import drive_auth_url
  url,state=drive_auth_url()
  return {"authorization_url":url}
 @app.get("/api/drive/oauth/callback")
-def drive_oauth_callback(code:str,state:str):
+def drive_oauth_callback(code:str,state:str,request:Request):\n if not state or state!=request.cookies.get("billi_oauth_state"): raise HTTPException(400,"OAuth state validation failed")
  from .drive_knowledge import oauth_flow,save_token
  flow=oauth_flow(state=state);flow.fetch_token(code=code);save_token(json.loads(flow.credentials.to_json()))
  from fastapi.responses import RedirectResponse
@@ -37,7 +37,7 @@ def drive_sync(authorization:str|None=Header(default=None)):
  from .drive_knowledge import ingest_all
  return ingest_all()
 @app.post("/api/knowledge/search")
-def knowledge_search(payload:SearchRequest):
+def knowledge_search(payload:SearchRequest,authorization:str|None=Header(default=None)):\n if not os.getenv("BILLI_ADMIN_TOKEN") or authorization!="Bearer "+os.getenv("BILLI_ADMIN_TOKEN"): raise HTTPException(401,"Admin token required for private knowledge search")
  from .drive_knowledge import search_knowledge
  return {"query":payload.query,"language":payload.language,"results":search_knowledge(payload.query,payload.language,payload.limit)}
 @app.post("/api/chat",response_model=None)
