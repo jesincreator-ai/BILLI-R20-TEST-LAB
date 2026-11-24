@@ -3,7 +3,7 @@
  * Configure Script Properties before running:
  * DRIVE_FOLDER_ID, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO, GITHUB_BRANCH (optional).
  * This script refuses to sync unless GitHub confirms the destination is private.
- * Supported: Google Docs, TXT, Markdown, CSV, JSON.
+ * Supported: Google Docs, Google Sheets (CSV), TXT, Markdown, CSV, JSON.
  * Unsupported files (including PDFs) are skipped and logged.
  */
 function syncDriveFolderToPrivateGitHub() {
@@ -32,7 +32,8 @@ function syncDriveFolderToPrivateGitHub() {
       let textContent;
 
       if (mime === MimeType.GOOGLE_DOCS || mime === MimeType.GOOGLE_SHEETS) {
-        const exportMime = mime === MimeType.GOOGLE_SHEETS ? 'text/csv' : 'text/plain';\n        const exportUrl = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '/export?mimeType=' + encodeURIComponent(exportMime);
+        const exportMime = mime === MimeType.GOOGLE_SHEETS ? 'text/csv' : 'text/plain';
+        const exportUrl = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '/export?mimeType=' + encodeURIComponent(exportMime);
         const response = UrlFetchApp.fetch(exportUrl, {
           method: 'get',
           headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
