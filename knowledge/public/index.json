@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": "83b15872af3373bd",
+    "path": "knowledge/public/README.md",
+    "language": "und",
+    "title": "README",
+    "content": "# Public BILLI Knowledge Only place information here that is intended to be publicly visible. This repository is public. Private Drive knowledge must be synced to the separate private repository described in `docs/FREE_AUTOMATION_SETUP.md`. Do not put secrets, private documents, or personal data in this folder.",
+    "content_sha256": "2ebe42432a728b17fd0026f600a0768d3b35cb921c7949ac18342b8cffea88d3"
+  }
+]
