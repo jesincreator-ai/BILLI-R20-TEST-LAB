@@ -20,11 +20,10 @@ function syncDriveFolderToPrivateGitHub() {
   }
 
   const folder = DriveApp.getFolderById(folderId);
-  const iterator = folder.getFiles();
+  const allFiles = collectDriveFiles_(folder);
   let transferred = 0, skipped = 0, failed = 0;
 
-  while (iterator.hasNext()) {
-    const file = iterator.next();
+  for (const file of allFiles) {
     try {
       const mime = file.getMimeType();
       const name = file.getName();
@@ -102,4 +101,13 @@ function githubRequest_(token, method, url, payload, allowNotFound) {
   if (allowNotFound && code === 404) return null;
   if (code < 200 || code >= 300) throw new Error('GitHub API ' + method + ' failed (' + code + '): ' + response.getContentText().slice(0, 400));
   return response.getContentText() ? JSON.parse(response.getContentText()) : {};
+}
+
+function collectDriveFiles_(folder) {
+  const collected = [];
+  const files = folder.getFiles();
+  while (files.hasNext()) collected.push(files.next());
+  const subfolders = folder.getFolders();
+  while (subfolders.hasNext()) collected.push.apply(collected, collectDriveFiles_(subfolders.next()));
+  return collected;
 }
