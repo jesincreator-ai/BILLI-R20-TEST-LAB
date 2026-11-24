@@ -37,7 +37,7 @@ Apps Script → Triggers → Add Trigger:
 - Event source: Time-driven
 - Frequency: every 15 minutes (or choose a less frequent schedule).
 
-The script syncs supported text files and Google Docs. PDFs and unsupported formats are logged and skipped; they are not silently converted. You can add a PDF extraction/OCR step later.
+The script scans the selected folder and nested subfolders, and syncs supported text files and Google Docs. PDFs and unsupported formats are logged and skipped; they are not silently converted. You can add a PDF extraction/OCR step later.
 
 ## 5) Verify
 - Add a test document to the designated Drive folder.
