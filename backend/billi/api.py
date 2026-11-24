@@ -6,7 +6,13 @@ from .intent import classify
 app=FastAPI(title="BILLI R-20 API",version="0.2.1",description="Demo router with private Drive/Supabase knowledge search.")
 class ChatRequest(BaseModel):
  message:str=Field(min_length=1,max_length=4000)
-class ChatResponse(BaseModel):\n intent:str\n confidence:float\n response:str\n provider:str="demo-router"\n knowledge:list[dict]=Field(default_factory=list)\nclass SearchRequest(BaseModel):
+class ChatResponse(BaseModel):
+ intent:str
+ confidence:float
+ response:str
+ provider:str="demo-router"
+ knowledge:list[dict]=Field(default_factory=list)
+class SearchRequest(BaseModel):
  query:str=Field(min_length=1,max_length=1000)
  language:str="en"
  limit:int=Field(default=6,ge=1,le=20)
