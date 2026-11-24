@@ -1,6 +1,6 @@
 """FastAPI API with private Drive → Supabase knowledge integration."""
 import os,json
-from fastapi import FastAPI,Header,HTTPException
+from fastapi import FastAPI,Header,HTTPException,Response,Request
 from pydantic import BaseModel,Field
 from .intent import classify
 app=FastAPI(title="BILLI R-20 API",version="0.2.0",description="Demo routing and private Drive knowledge integration.")
@@ -30,7 +30,7 @@ def drive_oauth_callback(code:str,state:str):
  from .drive_knowledge import oauth_flow,save_token
  flow=oauth_flow(state=state);flow.fetch_token(code=code);save_token(json.loads(flow.credentials.to_json()))
  from fastapi.responses import RedirectResponse
- return RedirectResponse(url="/?drive=connected",status_code=303)
+ redirect=RedirectResponse(url="/?drive=connected",status_code=303);redirect.delete_cookie("billi_oauth_state");return redirect
 @app.post("/api/drive/sync")
 def drive_sync(authorization:str|None=Header(default=None)):
  if not os.getenv("BILLI_ADMIN_TOKEN") or authorization!="Bearer "+os.getenv("BILLI_ADMIN_TOKEN"): raise HTTPException(401,"Admin bearer token required for full-drive sync")
