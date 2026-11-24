@@ -1,31 +1,51 @@
-"""FastAPI starter endpoints for BILLI R-20. No AI provider is configured."""
-from fastapi import FastAPI
-from pydantic import BaseModel, Field
+"""FastAPI API with private Drive → Supabase knowledge integration."""
+import os,json
+from fastapi import FastAPI,Header,HTTPException
+from pydantic import BaseModel,Field
 from .intent import classify
-
-app = FastAPI(title="BILLI R-20 API", version="0.1.0", description="Local starter API; deterministic demo routing only.")
-
+app=FastAPI(title="BILLI R-20 API",version="0.2.0",description="Demo routing and private Drive knowledge integration.")
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=4000)
-
-class ChatResponse(BaseModel):
-    intent: str
-    confidence: float
-    response: str
-    provider: str = "demo-router"
-
+ message:str=Field(min_length=1,max_length=4000)
+class SearchRequest(BaseModel):
+ query:str=Field(min_length=1,max_length=1000)
+ language:str="en"
+ limit:int=Field(default=6,ge=1,le=20)
 @app.get("/health")
 def health():
-    return {"status": "ok", "ai_provider": "not_configured", "database": "not_configured"}
-
-@app.post("/api/chat", response_model=ChatResponse)
-def chat(payload: ChatRequest):
-    intent = classify(payload.message)
-    replies = {
-        "greeting": "Hello! BILLI R-20 starter backend is online. This is a deterministic demo, not an LLM.",
-        "help": "I can route greetings, help, status, and knowledge-search intents. An AI provider and RAG database are not configured yet.",
-        "knowledge_search": "Knowledge search is recognized, but no knowledge database is connected yet.",
-        "status": "API is running. AI provider and knowledge database are not configured.",
-        "unknown": "I received your message, but no configured intent matched. Connect a model provider in a future phase for open-ended answers.",
-    }
-    return ChatResponse(intent=intent.name, confidence=intent.confidence, response=replies[intent.name])
+ return {"status":"ok","ai_provider":"not_configured","database":"supabase" if os.getenv("SUPABASE_URL") else "not_configured","drive":"configured" if os.getenv("GOOGLE_CLIENT_ID") else "not_configured"}
+@app.get("/api/drive/status")
+def drive_status():
+ try:
+  from .drive_knowledge import supa
+  connected=bool(supa().table("billi_drive_oauth_tokens").select("id").eq("id","owner").limit(1).execute().data)
+ except Exception: connected=False
+ return {"connected":connected,"supabase_configured":bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY")),"oauth_configured":bool(os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET")),"embedding_configured":bool(os.getenv("GEMINI_API_KEY")),"languages":["en","ta","si"],"privacy":"Drive read-only; private source sharing is not changed"}
+@app.get("/api/drive/oauth/start")
+def drive_oauth_start():
+ from .drive_knowledge import drive_auth_url
+ url,state=drive_auth_url()
+ return {"authorization_url":url}
+@app.get("/api/drive/oauth/callback")
+def drive_oauth_callback(code:str,state:str):
+ from .drive_knowledge import oauth_flow,save_token
+ flow=oauth_flow(state=state);flow.fetch_token(code=code);save_token(json.loads(flow.credentials.to_json()))
+ from fastapi.responses import RedirectResponse
+ return RedirectResponse(url="/?drive=connected",status_code=303)
+@app.post("/api/drive/sync")
+def drive_sync(authorization:str|None=Header(default=None)):
+ if not os.getenv("BILLI_ADMIN_TOKEN") or authorization!="Bearer "+os.getenv("BILLI_ADMIN_TOKEN"): raise HTTPException(401,"Admin bearer token required for full-drive sync")
+ from .drive_knowledge import ingest_all
+ return ingest_all()
+@app.post("/api/knowledge/search")
+def knowledge_search(payload:SearchRequest):
+ from .drive_knowledge import search_knowledge
+ return {"query":payload.query,"language":payload.language,"results":search_knowledge(payload.query,payload.language,payload.limit)}
+@app.post("/api/chat",response_model=None)
+def chat(payload:ChatRequest):
+ intent=classify(payload.message)
+ try:
+  from .drive_knowledge import search_knowledge
+  hits=search_knowledge(payload.message,"en",4)
+ except Exception: hits=[]
+ replies={"greeting":"Hello! BILLI R-20 API is online. Knowledge retrieval is enabled when configured.","help":"Intent routing and knowledge retrieval are available when configured.","knowledge_search":"Knowledge retrieval can be used when Supabase and Gemini are configured.","status":"API is running. Drive/Supabase status is available at /api/drive/status.","unknown":"I received your message. Retrieved knowledge can support answers; an LLM provider is not yet configured."}
+ return {"intent":intent.name,"confidence":intent.confidence,"response":replies[intent.name],"provider":"demo-router+retrieval" if hits else "demo-router","knowledge":hits}
