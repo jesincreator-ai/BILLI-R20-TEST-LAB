@@ -1,2 +1,4 @@
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
+# Private Drive and Supabase RAG pipeline
+-r backend/billi/requirements-drive.txt
