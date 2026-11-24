@@ -59,5 +59,5 @@ def chat(payload:ChatRequest,authorization:str|None=Header(default=None)):
    from .drive_knowledge import search_knowledge
    hits=search_knowledge(payload.message,"en",4)
   except Exception: hits=[]
- replies={"greeting":"Hello! BILLI R-20 API is online. Knowledge retrieval is enabled when configured.","help":"Intent routing and knowledge retrieval are available when configured.","knowledge_search":"Knowledge retrieval can be used when Supabase and Gemini are configured.","status":"API is running. Drive/Supabase status is available at /api/drive/status.","unknown":"I received your message. Retrieved knowledge can support answers; an LLM provider is not yet configured."}
+ replies={"greeting":"Hello! BILLI R-20 deterministic demo router is online. Knowledge retrieval is enabled when configured.","help":"Intent routing and knowledge retrieval are available when configured.","knowledge_search":"Knowledge retrieval can be used when Supabase and Gemini are configured.","status":"API is running. Drive/Supabase status is available at /api/drive/status.","unknown":"I received your message. Retrieved knowledge can support answers; an LLM provider is not yet configured."}
  return ChatResponse(intent=intent.name,confidence=intent.confidence,response=replies[intent.name],provider="demo-router+retrieval" if hits else "demo-router",knowledge=hits)
