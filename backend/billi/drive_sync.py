@@ -23,7 +23,7 @@ class DriveSyncNotReady(RuntimeError):
 def needs_reindex(existing: dict[str, Any] | None, metadata: dict[str, Any]) -> bool:
     if not existing:
         return True
-    return existing.get("version_key") != file_version(metadata) or existing.get("status") != "indexed"
+    return existing.get("version_key") != file_version(metadata)
 
 
 class DriveSyncService:
@@ -160,9 +160,9 @@ class DriveSyncService:
                         continue
                     seen += 1
                     outcome = self._index_one(metadata)
-                    if outcome in {"indexed", "unchanged"}:
+                    if outcome == "indexed":
                         indexed += 1
-                    else:
+                    elif outcome == "skipped":
                         skipped += 1
                     processed_this_step += 1
                     continue
