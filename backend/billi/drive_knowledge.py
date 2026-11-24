@@ -40,8 +40,8 @@ def load_creds():
         c.refresh(Request()); save_token(json.loads(c.to_json()))
     return c
 def detect_language(text):
-    if re.search(r"[\\u0B80-\\u0BFF]",text): return "ta"
-    if re.search(r"[\\u0D80-\\u0DFF]",text): return "si"
+    if re.search(r"[\u0B80-\u0BFF]",text): return "ta"
+    if re.search(r"[\u0D80-\u0DFF]",text): return "si"
     return "en"
 def chunk_text(text,size=1100,overlap=160):
     clean=re.sub(r"\\s+"," ",text).strip()
