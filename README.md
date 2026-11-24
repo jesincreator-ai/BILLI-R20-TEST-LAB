@@ -1,34 +1,40 @@
 # BILLI R-20 AI LAB
 
-BILLI-OS AI — modular robotics AI development and testing lab for the future BILLI R-20 robot.
+BILLI-OS AI — modular AI and robotics test lab for the future BILLI R-20 robot.
 
-**Status:** Frontend foundation plus connected FastAPI demo backend. Root Vercel routing and frontend-to-backend chat/health integration are implemented; the knowledge database and full model providers remain unconfigured. The API, deterministic intent routing, consent-gated local-memory module, frontend `/api/chat` connection, backend health diagnostics, and root Vercel entrypoint are implemented. The AI provider, knowledge database, physical hardware, and actual 3D face are not connected. Demo responses are clearly labeled and are not LLM output.
+## Deploy on Vercel
 
-## Frontend
-Open `index.html` in a browser or serve the repository using `python -m http.server 8000`. For Vercel, deploy from the repository root; `vercel.json` routes `/api/*` and `/health` to the FastAPI entrypoint at `api/index.py`.
+This repository uses one root-level FastAPI entrypoint: main.py exports the app from backend.billi.api. Root pyproject.toml and requirements.txt hold Python deployment configuration. Browser assets are under public/ and are served as static files.
 
-Includes responsive command center, CALM/RUGGED preview, expression controls, demo chat, knowledge search empty state, voice browser capability UI, hardware simulator UI, and diagnostics.
+Set Vercel Root Directory to the repository root (./). Leave Build Command and Output Directory unset; Vercel should detect the Python FastAPI app. Redeploy the latest main commit.
 
-## Backend starter
-See [ROADMAP.md](ROADMAP.md) for phase progress and setup.
+API health check: /health. Chat endpoint: POST /api/chat. FastAPI API explorer: /docs.
 
-```bash
-python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -r backend/requirements.txt
-uvicorn billi.api:app --app-dir backend --reload
-```
-API docs: `http://127.0.0.1:8000/docs`; health: `http://127.0.0.1:8000/health`.
+## Local development (Windows PowerShell)
 
-Tests:
-```bash
-python -m unittest discover -s backend/tests -v
-```
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+$env:PYTHONPATH = "."
+uvicorn main:app --reload
 
-## Planned architecture
-FastAPI → Nanobot Lite intent router → orchestration adapters → local model/provider (future), Mem0 Lite consent-gated local memory, SQLite/FTS5 RAG and JSONL tools, Wake Lite/Voice Lite, face animation, hardware simulation/MicroPython, private Drive OAuth, and QA.
+Open http://127.0.0.1:8000.
 
-Languages planned: English, Tamil, Sinhala. Security: no credentials or private Drive connection committed. Hardware is simulation only until physically validated.
+Tests: install httpx, set PYTHONPATH=backend, then run python -m unittest discover -s backend/tests -v.
 
-See [ROADMAP.md](ROADMAP.md) for phases, verification status, and blockers.
+## Honest feature status
+
+- Nanobot Lite: deterministic intent router, not an LLM.
+- Mem0 Lite: consent-gated local SQLite helper; not automatically connected to conversations.
+- Knowledge/RAG database: not configured in this deployment starter.
+- Local and external model providers: not configured.
+- Wake Lite: no wake-word detector configured.
+- Voice Lite: browser capabilities only; support varies.
+- Robot face and hardware: visual preview/simulation only; no physical ESP32 is connected.
+- Google Drive: private connector not configured; no Drive files are read or exposed.
+
+## Vercel storage warning
+
+Vercel function filesystems are ephemeral. Do not rely on a SQLite file in the function runtime as durable storage. Add a persistent managed database before enabling hosted knowledge or memory writes.
+
+Never commit .env files, OAuth credentials, API keys, or admin tokens.
