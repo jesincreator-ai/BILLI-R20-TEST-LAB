@@ -38,3 +38,7 @@ Tests: install httpx, set PYTHONPATH=backend, then run python -m unittest discov
 Vercel function filesystems are ephemeral. Do not rely on a SQLite file in the function runtime as durable storage. Add a persistent managed database before enabling hosted knowledge or memory writes.
 
 Never commit .env files, OAuth credentials, API keys, or admin tokens.\n\n## Phase 2 progress\n\nA local-first `backend/billi/knowledge.py` module now provides SQLite + FTS5 indexing, English/Tamil/Sinhala language validation, upsert/search, and JSONL export. It is intentionally not enabled as hosted persistence yet; the next task is wiring it into the authenticated knowledge API and adding explicit import/export commands.\n
+
+## BILLI Unified Antigravity Workspace (Option A)
+
+Workspace scaffold and setup instructions are available in [`docs/workspace/SETUP.md`](docs/workspace/SETUP.md). The repository manifest is [`docs/workspace/workspace.json`](docs/workspace/workspace.json), project rules are [`docs/workspace/AGENTS.md`](docs/workspace/AGENTS.md), and Windows bootstrap script is [`docs/workspace/scripts/bootstrap_workspace.ps1`](docs/workspace/scripts/bootstrap_workspace.ps1). This setup preserves separate Git repositories.
