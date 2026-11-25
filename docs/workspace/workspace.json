@@ -1,0 +1,71 @@
+{
+  "workspace_name": "BILLI-R20-UNIFIED",
+  "integration_strategy": "workspace",
+  "preserve_repository_history": true,
+  "repositories": [
+    {
+      "name": "BILLI-Motion-Emotion-Manager",
+      "url": "https://github.com/jesincreator-ai/BILLI-Motion-Emotion-Manager.git",
+      "folder": "repos/M6-FACE"
+    },
+    {
+      "name": "BILLI-Robot-Controller",
+      "url": "https://github.com/jesincreator-ai/BILLI-Robot-Controller.git",
+      "folder": "repos/M7-MOTION"
+    },
+    {
+      "name": "BILLI-Guardian-Recovery",
+      "url": "https://github.com/jesincreator-ai/BILLI-Guardian-Recovery.git",
+      "folder": "repos/M8-GUARDIAN"
+    },
+    {
+      "name": "BILLI-R20-TEST-LAB",
+      "url": "https://github.com/jesincreator-ai/BILLI-R20-TEST-LAB.git",
+      "folder": "repos/AI-LAB"
+    },
+    {
+      "name": "Voice-Lite",
+      "url": "https://github.com/jesincreator-ai/Voice-Lite.git",
+      "folder": "repos/M5-VOICE"
+    },
+    {
+      "name": "Wake-Lite",
+      "url": "https://github.com/jesincreator-ai/Wake-Lite.git",
+      "folder": "repos/WAKE"
+    },
+    {
+      "name": "Mem0-Lite",
+      "url": "https://github.com/jesincreator-ai/Mem0-Lite.git",
+      "folder": "repos/MEMORY"
+    },
+    {
+      "name": "nanobot-lite",
+      "url": "https://github.com/jesincreator-ai/nanobot-lite.git",
+      "folder": "repos/INTENT"
+    }
+  ],
+  "knowledge": {
+    "dropbox_root": "BILLI_R20",
+    "local_sync_folder_env": "BILLI_DROPBOX_SYNC",
+    "google_drive_sync_folder_env": "BILLI_GOOGLE_DRIVE_SYNC",
+    "local_master_database": "database/master.sqlite3",
+    "source_records": "database/source_records",
+    "language_exports": [
+      "database/exports/en",
+      "database/exports/ta",
+      "database/exports/si"
+    ],
+    "esp32_export": "database/esp32"
+  },
+  "offline_robot": {
+    "internet_required": false,
+    "cloud_required": false,
+    "runtime_database": "compact-jsonl-or-text-shards-on-sd",
+    "sqlite_on_wroom": false
+  },
+  "online_test": {
+    "backend": "FastAPI",
+    "local_url": "http://127.0.0.1:8000",
+    "persistent_cloud_database": "Supabase"
+  }
+}
