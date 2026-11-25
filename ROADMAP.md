@@ -15,7 +15,7 @@
 - [x] Expression control preview
 - [x] Browser voice capability detection
 - [x] ESP32 hardware simulator view
-- [ ] Real SQLite/FTS5 RAG knowledge engine
+- [x] SQLite/FTS5 local knowledge engine with multilingual metadata and JSONL export\n- [ ] Wire FTS5 store into authenticated knowledge/search API
 - [ ] Chat-to-memory orchestration with consent
 - [ ] Full multilingual response composition
 - [ ] Reference-matched 3D robot model and face animation
