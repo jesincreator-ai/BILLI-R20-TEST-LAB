@@ -15,7 +15,8 @@
 - [x] Expression control preview
 - [x] Browser voice capability detection
 - [x] ESP32 hardware simulator view
-- [x] SQLite/FTS5 local knowledge engine with multilingual metadata and JSONL export\n- [ ] Wire FTS5 store into authenticated knowledge/search API
+- [x] SQLite/FTS5 local knowledge engine with multilingual metadata and JSONL export
+- [x] Wire FTS5 store into authenticated knowledge/search API
 - [ ] Chat-to-memory orchestration with consent
 - [ ] Full multilingual response composition
 - [ ] Reference-matched 3D robot model and face animation
@@ -25,4 +26,4 @@
 
 ## Safety / status rules
 
-A demo intent response is not a full language model. An empty or unconfigured knowledge source must not be represented as connected. Hardware remains simulated until a physical ESP32 is connected and tested. Vercel filesystem data is ephemeral; use a persistent managed database before relying on hosted memory or knowledge writes.
+A demo intent response is not a full language model. An empty or unconfigured knowledge source must not be represented as connected. Hardware remains simulated until a physical ESP32 is connected and tested. Vercel filesystem data is ephemeral; use a persistent managed database before relying on hosted memory or knowledge writes. Private knowledge endpoints require an explicit admin token and database path; they return 503 when not configured.
