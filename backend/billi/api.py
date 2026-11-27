@@ -1,23 +1,26 @@
-"""BILLI R-20 API: deterministic intent routing plus private local knowledge endpoints."""
-import json
+"""BILLI R-20 API: deterministic intent routing plus private local knowledge and consent-gated memory endpoints."""
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, Header, HTTPException, Request, Response
+from fastapi import FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from .intent import classify
 from .knowledge import KnowledgeDocument, KnowledgeStore, SUPPORTED_LANGUAGES
+from .memory import MemoryStore
 
 app = FastAPI(
     title="BILLI R-20 API",
-    version="0.3.0",
-    description="Deterministic router with optional local SQLite/FTS5 knowledge retrieval.",
+    version="0.4.0",
+    description="Deterministic router with optional local SQLite/FTS5 knowledge and consent-gated memory.",
 )
 
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
+    remember_key: str | None = Field(default=None, min_length=1, max_length=200)
+    remember_value: str | None = Field(default=None, min_length=1, max_length=4000)
+    memory_consent: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -26,6 +29,7 @@ class ChatResponse(BaseModel):
     response: str
     provider: str = "demo-router"
     knowledge: list[dict] = Field(default_factory=list)
+    memory: dict = Field(default_factory=dict)
 
 
 class SearchRequest(BaseModel):
@@ -43,6 +47,17 @@ class KnowledgeDocumentRequest(BaseModel):
     metadata: dict[str, object] = Field(default_factory=dict)
 
 
+class MemoryRememberRequest(BaseModel):
+    key: str = Field(min_length=1, max_length=200)
+    value: str = Field(min_length=1, max_length=4000)
+    consent: bool = False
+
+
+class MemoryRecallRequest(BaseModel):
+    key: str = Field(min_length=1, max_length=200)
+    consent: bool = False
+
+
 def owner_ok(auth: str | None) -> bool:
     token = os.getenv("BILLI_ADMIN_TOKEN")
     return bool(token) and auth == "Bearer " + token
@@ -53,20 +68,29 @@ def knowledge_db_path() -> str | None:
     return value or None
 
 
+def memory_db_path() -> str | None:
+    value = os.getenv("BILLI_MEMORY_DB", "").strip()
+    return value or None
+
+
 def open_knowledge_store() -> KnowledgeStore:
     path = knowledge_db_path()
     if not path:
-        raise HTTPException(
-            status_code=503,
-            detail="Local knowledge is not configured. Set BILLI_KNOWLEDGE_DB to a writable SQLite path.",
-        )
+        raise HTTPException(status_code=503, detail="Local knowledge is not configured. Set BILLI_KNOWLEDGE_DB.")
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     return KnowledgeStore(path)
 
 
+def open_memory_store() -> MemoryStore:
+    path = memory_db_path()
+    if not path:
+        raise HTTPException(status_code=503, detail="Local memory is not configured. Set BILLI_MEMORY_DB.")
+    return MemoryStore(path)
+
+
 def require_admin(authorization: str | None) -> None:
     if not owner_ok(authorization):
-        raise HTTPException(status_code=401, detail="Admin token required for private knowledge operations")
+        raise HTTPException(status_code=401, detail="Admin token required for private operations")
 
 
 @app.get("/health")
@@ -75,6 +99,7 @@ def health():
         "status": "ok",
         "ai_provider": "not_configured",
         "database": "local_sqlite_fts5_configured" if knowledge_db_path() else "not_configured",
+        "memory": "local_sqlite_consent_gated_configured" if memory_db_path() else "not_configured",
         "drive": "configured" if os.getenv("GOOGLE_CLIENT_ID") else "not_configured",
     }
 
@@ -86,12 +111,7 @@ def knowledge_search(payload: SearchRequest, authorization: str | None = Header(
         raise HTTPException(status_code=400, detail="language must be one of en, ta, si")
     store = open_knowledge_store()
     try:
-        return {
-            "query": payload.query,
-            "language": payload.language.lower(),
-            "results": store.search(payload.query, payload.language, payload.limit),
-            "source": "local_sqlite_fts5",
-        }
+        return {"query": payload.query, "language": payload.language.lower(), "results": store.search(payload.query, payload.language, payload.limit), "source": "local_sqlite_fts5"}
     finally:
         store.close()
 
@@ -103,16 +123,7 @@ def knowledge_upsert(payload: KnowledgeDocumentRequest, authorization: str | Non
         raise HTTPException(status_code=400, detail="language must be one of en, ta, si")
     store = open_knowledge_store()
     try:
-        store.upsert(
-            KnowledgeDocument(
-                doc_id=payload.doc_id,
-                title=payload.title,
-                content=payload.content,
-                language=payload.language,
-                source=payload.source,
-                metadata=payload.metadata,
-            )
-        )
+        store.upsert(KnowledgeDocument(doc_id=payload.doc_id, title=payload.title, content=payload.content, language=payload.language, source=payload.source, metadata=payload.metadata))
         return {"status": "stored", "doc_id": payload.doc_id, "source": "local_sqlite_fts5"}
     finally:
         store.close()
@@ -123,11 +134,32 @@ def knowledge_export(authorization: str | None = Header(default=None)):
     require_admin(authorization)
     store = open_knowledge_store()
     try:
-        return Response(
-            content=store.export_jsonl(),
-            media_type="application/x-ndjson; charset=utf-8",
-            headers={"Content-Disposition": 'attachment; filename="billi-knowledge.jsonl"'},
-        )
+        return Response(content=store.export_jsonl(), media_type="application/x-ndjson; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="billi-knowledge.jsonl"'})
+    finally:
+        store.close()
+
+
+@app.post("/api/memory/remember")
+def memory_remember(payload: MemoryRememberRequest, authorization: str | None = Header(default=None)):
+    require_admin(authorization)
+    if not payload.consent:
+        return {"status": "not_stored", "reason": "explicit_consent_required"}
+    store = open_memory_store()
+    try:
+        stored = store.remember(payload.key, payload.value, consent=True)
+        return {"status": "stored" if stored else "not_stored", "key": payload.key, "source": "local_sqlite_consent_gated"}
+    finally:
+        store.close()
+
+
+@app.post("/api/memory/recall")
+def memory_recall(payload: MemoryRecallRequest, authorization: str | None = Header(default=None)):
+    require_admin(authorization)
+    if not payload.consent:
+        return {"status": "not_returned", "reason": "explicit_consent_required", "value": None}
+    store = open_memory_store()
+    try:
+        return {"status": "ok", "key": payload.key, "value": store.recall(payload.key, consent=True), "source": "local_sqlite_consent_gated"}
     finally:
         store.close()
 
@@ -136,23 +168,29 @@ def knowledge_export(authorization: str | None = Header(default=None)):
 def chat(payload: ChatRequest, authorization: str | None = Header(default=None)):
     intent = classify(payload.message)
     hits: list[dict] = []
+    memory_result = {"status": "not_requested"}
     if owner_ok(authorization) and knowledge_db_path():
         store = open_knowledge_store()
         try:
             hits = store.search(payload.message, "en", 4)
         finally:
             store.close()
+    if payload.remember_key and payload.remember_value:
+        if not payload.memory_consent:
+            memory_result = {"status": "not_stored", "reason": "explicit_consent_required"}
+        elif owner_ok(authorization) and memory_db_path():
+            store = open_memory_store()
+            try:
+                memory_result = {"status": "stored" if store.remember(payload.remember_key, payload.remember_value, consent=True) else "not_stored", "key": payload.remember_key}
+            finally:
+                store.close()
+        else:
+            memory_result = {"status": "not_stored", "reason": "admin_and_memory_configuration_required"}
     replies = {
         "greeting": "Hello! BILLI R-20 deterministic demo router is online. Local knowledge retrieval is enabled when configured.",
-        "help": "Intent routing and local knowledge retrieval are available when configured.",
+        "help": "Intent routing, local knowledge retrieval, and consent-gated memory are available when configured.",
         "knowledge_search": "Local knowledge retrieval can be used when BILLI_KNOWLEDGE_DB is configured.",
-        "status": "API is running. Local knowledge status is reported by /health.",
+        "status": "API is running. Local knowledge and memory status are reported by /health.",
         "unknown": "I received your message. Retrieved knowledge can support answers; an LLM provider is not yet configured.",
     }
-    return ChatResponse(
-        intent=intent.name,
-        confidence=intent.confidence,
-        response=replies[intent.name],
-        provider="demo-router+local-retrieval" if hits else "demo-router",
-        knowledge=hits,
-    )
+    return ChatResponse(intent=intent.name, confidence=intent.confidence, response=replies[intent.name], provider="demo-router+local-retrieval" if hits else "demo-router", knowledge=hits, memory=memory_result)
