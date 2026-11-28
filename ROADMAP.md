@@ -18,7 +18,7 @@
 - [x] SQLite/FTS5 local knowledge engine with multilingual metadata and JSONL export
 - [x] Wire FTS5 store into authenticated knowledge/search API
 - [x] Chat-to-memory orchestration with explicit consent
-- [ ] Full multilingual response composition
+- [x] Full multilingual response composition (deterministic local phrases; provider-free)
 - [ ] Reference-matched 3D robot model and face animation
 - [ ] Persistent cloud storage integration
 - [ ] Google Drive OAuth and private sync
