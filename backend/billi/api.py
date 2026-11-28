@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from .intent import classify
 from .knowledge import KnowledgeDocument, KnowledgeStore, SUPPORTED_LANGUAGES
 from .memory import MemoryStore
+from .language import RESPONSES, choose_language
 
 app = FastAPI(
     title="BILLI R-20 API",
@@ -21,6 +22,7 @@ class ChatRequest(BaseModel):
     remember_key: str | None = Field(default=None, min_length=1, max_length=200)
     remember_value: str | None = Field(default=None, min_length=1, max_length=4000)
     memory_consent: bool = False
+    response_language: str | None = Field(default=None)
 
 
 class ChatResponse(BaseModel):
@@ -186,11 +188,9 @@ def chat(payload: ChatRequest, authorization: str | None = Header(default=None))
                 store.close()
         else:
             memory_result = {"status": "not_stored", "reason": "admin_and_memory_configuration_required"}
-    replies = {
-        "greeting": "Hello! BILLI R-20 deterministic demo router is online. Local knowledge retrieval is enabled when configured.",
-        "help": "Intent routing, local knowledge retrieval, and consent-gated memory are available when configured.",
-        "knowledge_search": "Local knowledge retrieval can be used when BILLI_KNOWLEDGE_DB is configured.",
-        "status": "API is running. Local knowledge and memory status are reported by /health.",
-        "unknown": "I received your message. Retrieved knowledge can support answers; an LLM provider is not yet configured.",
-    }
-    return ChatResponse(intent=intent.name, confidence=intent.confidence, response=replies[intent.name], provider="demo-router+local-retrieval" if hits else "demo-router", knowledge=hits, memory=memory_result)
+    try:
+        response_language = choose_language(payload.response_language, payload.message)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    response_text = RESPONSES[intent.name][response_language]
+    return ChatResponse(intent=intent.name, confidence=intent.confidence, response=response_text, provider="demo-router+local-retrieval" if hits else "demo-router", knowledge=hits, memory=memory_result)
