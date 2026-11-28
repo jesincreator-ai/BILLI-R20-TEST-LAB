@@ -23,3 +23,5 @@ Hosted persistence is not claimed. Vercel filesystems are ephemeral; configure a
 - Hardware: simulation only.
 - Google Drive: not configured.
 - Never commit .env files, OAuth credentials, API keys, or admin tokens.
+
+- Multilingual response composition: deterministic English/Tamil/Sinhala phrases with script detection; no LLM translation claim.
